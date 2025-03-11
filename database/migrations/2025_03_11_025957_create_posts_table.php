@@ -12,6 +12,7 @@ return new class extends Migration {
     {
         Schema::create('posts', function (Blueprint $table) {
             $table->id('idpost'); 
+            
             $table->text('title');
             $table->text('content');
             $table->dateTime('date');

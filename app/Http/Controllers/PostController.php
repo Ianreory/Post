@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Post;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class PostController extends Controller
 {
@@ -14,7 +16,14 @@ class PostController extends Controller
     public function index()
     {
         $posts = Post::with('user')->latest()->get();
-        return view('posts.index', compact('posts'));
+        return view('post.index', compact('posts'));
+    }
+
+
+    public function index_user()
+    {
+        $users = User::all();
+        return view('post.index_user', compact('users'));
     }
 
     /**
@@ -22,8 +31,8 @@ class PostController extends Controller
      */
     public function create()
     {
-        $users = User::all(); // Ambil semua user untuk dropdown (jika perlu)
-        return view('posts.create', compact('users'));
+        $users = User::all();
+        return view('post.create', compact('users'));
     }
 
     /**
@@ -34,13 +43,16 @@ class PostController extends Controller
         $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required',
-            'date' => 'required|date',
-            'user_id' => 'required|exists:users,id',
         ]);
 
-        Post::create($request->all());
+        Post::create([
+            'title' => $request->title,
+            'content' => $request->content,
+            'date' => Carbon::now(),
+            'user_id' => Auth::id(),
+        ]);
 
-        return redirect()->route('posts.index')->with('success', 'Post berhasil ditambahkan!');
+        return redirect()->route('post.index')->with('success', 'Post berhasil ditambahkan!');
     }
 
     /**
@@ -48,41 +60,46 @@ class PostController extends Controller
      */
     public function show(Post $post)
     {
+
         return view('posts.show', compact('post'));
     }
 
     /**
      * Menampilkan form edit post.
      */
-    public function edit(Post $post)
+    public function edit($id)
     {
-        $users = User::all();
-        return view('posts.edit', compact('post', 'users'));
+        $post = Post::findOrFail($id);
+        return view('post.edit', compact('post'));
     }
 
     /**
      * Memperbarui post yang sudah ada.
      */
-    public function update(Request $request, Post $post)
+    public function update(Request $request, $id)
     {
         $request->validate([
             'title' => 'required|string|max:255',
-            'content' => 'required',
-            'date' => 'required|date',
-            'user_id' => 'required|exists:users,id',
+            'content' => 'required|string',
         ]);
 
-        $post->update($request->all());
+        $post = Post::findOrFail($id);
+        $post->update([
+            'title' => $request->title,
+            'content' => $request->content,
+        ]);
 
-        return redirect()->route('posts.index')->with('success', 'Post berhasil diperbarui!');
+        return redirect()->route('post.index')->with('success', 'Post berhasil diperbarui.');
     }
 
     /**
      * Menghapus post.
      */
-    public function destroy(Post $post)
+    public function destroy($idpost)
     {
+        $post = Post::where('idpost', $idpost)->firstOrFail();
         $post->delete();
-        return redirect()->route('posts.index')->with('success', 'Post berhasil dihapus!');
+        return redirect()->route('post.index')->with('success', 'Post berhasil dihapus!');
     }
+
 }
